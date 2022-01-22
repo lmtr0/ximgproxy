@@ -1,15 +1,8 @@
-# 👷 `worker-template` Hello World
+# Workers Image Proxy
 
-A template for kick starting a Cloudflare worker project.
+this project aims to bring security to applications that need to use extenal image content, like what https://external-content.duckduckgo.com/. 
+It achieves this by using the Cache and Fetch Apis from cloudflare workers_dev
 
-[`index.js`](https://github.com/cloudflare/worker-template/blob/master/index.js) is the content of the Workers script.
 
-#### Wrangler
-
-To generate using [wrangler](https://github.com/cloudflare/wrangler)
-
-```
-wrangler generate projectname https://github.com/cloudflare/worker-template
-```
-
-Further documentation for Wrangler can be found [here](https://developers.cloudflare.com/workers/tooling/wrangler).
+## License
+This project is distributed under the [MIT](./LICENSE_MIT) and Apache v2 License
