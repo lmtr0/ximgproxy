@@ -46,7 +46,34 @@ addEventListener("fetch", event => {
     })
 
     try {
-        event.respondWith(handleRequest(event, params['u']))
+        if (!params['u']) {
+            event.respondWith(new Response(`
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>XImg Proxy</title>
+
+                    <link rel="stylesheet" href="https://theme.higenku.org/xthm.css">
+                    <script src="https://theme.higenku.org/xthm.umd.js"></script>
+                </head>
+                <body>
+                    <div class="container container-full d-flex justify-center items-center">
+                        <div class="card">
+                            <h1>XImg Proxy Server</h1>
+                            <h2>Open Source Image Proxy Server, to Secure applications</h2>
+                            <h2>Source Code at <a href="https://github.com/lmtr0/ximgproxy">https://github.com/lmtr0/ximgproxy</a></h2>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `, {headers: {'Content-Type': 'text/html'}}))
+        }
+        else {
+            event.respondWith(handleRequest(event, params['u']))
+        }
     } catch (e) {
         event.respondWith(new Response("500: Server threw an error: " + e.message))
     }
