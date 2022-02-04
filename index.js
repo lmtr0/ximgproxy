@@ -1,52 +1,68 @@
-async function sha256(message) {
+async function sha(message) {
     // encode as UTF-8
     const msgBuffer = new TextEncoder().encode(message)
-    const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer)
+    const hashBuffer = await crypto.subtle.digest("SHA-1", msgBuffer)
     const hashArray = Array.from(new Uint8Array(hashBuffer))
     const hashHex = hashArray.map(b => ("00" + b.toString(16)).slice(-2)).join("")
     return hashHex
 }
 
-async function handleRequest(event, encodedUrl) {
-    const cache = caches.default
-    const url = decodeURIComponent(encodedUrl)
-    const cacheKey = `https://cache.img.higenku.org/${await sha256(url)}`;
+
+async function handleRequest(event, url, cachePromise) {
+
+    const cache = caches.default; 
+
+    const cacheKey = `https://static.higenku.org/${await sha(url)}`;
     let response = await cache.match(url);
-    console.log(`cacheKey ${cacheKey}`)
-    console.log(`response`, response)
+
     if (!response) {
-        // If not in cache, get it from origin
         response = await fetch(url, {
             cf: {
-              // Always cache this fetch regardless of content type
-              // for a max of 5 seconds before revalidating the resource
-              cacheTtl: 86400/2, // half a day
-              cacheEverything: true,
-              //Enterprise only feature, see Cache API for other plans
-              cacheKey: cacheKey,
+                // Always cache this fetch regardless of content type
+                cacheTtl: 86400/2, // half a day
+                cacheEverything: true,
             },
         })
-        response = new Response(response.body, response)
-        response.headers.append("Cache-Control", "s-maxage=86400") // aprox. 1 day of cache
+
+        let type = response.headers.get("Content-Type");
+        let date = new Date(Date.now())
+        date.setUTCDate(date.getUTCDate() + 1);
+
+        // response = new Response(response.body, response);
+        //         "Content-Type": type,
+        //         "Cache-Control": "s-maxage=86400",
+        //         "Vary": "Content-Encoding",
+        //         "Expires": date.toUTCString(),
+        //         // "etag": `W/${encodeURIComponent(url)}`,
+        //         "age": "300",
+        //         "strict-transport-security": "max-age=86400; includeSubDomains; preload",
+        //         "Last-Modified": new Date(Date.now()).toUTCString(),
+                
+        //         "access-control-allow-origin": "*",
+        //         "timing-allow-origin": "*",
+        //         "x-content-type-options":"nosniff",
+        //         "zzz-penis": "Hello1",
+        //     },
+        //     // status: 304,
+        // })
+
+        console.log("Putting")
         event.waitUntil(cache.put(cacheKey, response.clone()))
-        console.log("Not the Cached result")
+        console.log("No Cache")
     }
-    return response
+
+    console.log(`responding`)
+    return response;
 }
 
 addEventListener("fetch", event => {
 
-    const params = {}
-    const url = new URL(event.request.url)
-    const queryString = url.search.slice(1).split('&')
-
-    queryString.forEach(item => {
-        const kv = item.split('=')
-        if (kv[0]) params[kv[0]] = kv[1] || true
-    })
+    let origin = event.request.headers.get(`Host`);
+    const url = event.request.url.replace(`https://${origin}/`, ``);
+    const cache = caches.open("Private__Cache")
 
     try {
-        if (!params['u']) {
+        if (!url) {
             event.respondWith(new Response(`
                 <!DOCTYPE html>
                 <html lang="en">
@@ -72,7 +88,7 @@ addEventListener("fetch", event => {
             `, {headers: {'Content-Type': 'text/html'}}))
         }
         else {
-            event.respondWith(handleRequest(event, params['u']))
+            event.respondWith(handleRequest(event, url, cache))
         }
     } catch (e) {
         event.respondWith(new Response("500: Server threw an error: " + e.message))
