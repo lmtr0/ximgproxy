@@ -1,18 +1,8 @@
-async function sha(message) {
-    // encode as UTF-8
-    const msgBuffer = new TextEncoder().encode(message)
-    const hashBuffer = await crypto.subtle.digest("SHA-1", msgBuffer)
-    const hashArray = Array.from(new Uint8Array(hashBuffer))
-    const hashHex = hashArray.map(b => ("00" + b.toString(16)).slice(-2)).join("")
-    return hashHex
-}
-
-
-async function handleRequest(event, url, cachePromise) {
+async function handleRequest(event, url) {
 
     const cache = caches.default; 
 
-    const cacheKey = `https://static.higenku.org/${await sha(url)}`;
+    const cacheKey = `https://static.higenku.org/${url}`;
     let response = await cache.match(url);
 
     if (!response) {
@@ -27,31 +17,26 @@ async function handleRequest(event, url, cachePromise) {
         let type = response.headers.get("Content-Type");
         let date = new Date(Date.now())
         date.setUTCDate(date.getUTCDate() + 1);
+        date = date.toUTCString();
+        const todayDate = new Date(Date.now()).toUTCString();
+        response = new Response(response.body, {
+            headers: {
+                "content-type": type,
+                "access-control-allow-origin": "*",
 
-        // response = new Response(response.body, response);
-        //         "Content-Type": type,
-        //         "Cache-Control": "s-maxage=86400",
-        //         "Vary": "Content-Encoding",
-        //         "Expires": date.toUTCString(),
-        //         // "etag": `W/${encodeURIComponent(url)}`,
-        //         "age": "300",
-        //         "strict-transport-security": "max-age=86400; includeSubDomains; preload",
-        //         "Last-Modified": new Date(Date.now()).toUTCString(),
-                
-        //         "access-control-allow-origin": "*",
-        //         "timing-allow-origin": "*",
-        //         "x-content-type-options":"nosniff",
-        //         "zzz-penis": "Hello1",
-        //     },
-        //     // status: 304,
-        // })
-
-        console.log("Putting")
+                "age": "300",
+                "cache-control": "public, max-age=300",
+                "date": todayDate,
+                "etag": `"URL: ${url} from ${date}"`,
+                "expires": date,
+                "vary": "Content-Encoding", // cf sets
+                "last-modified": todayDate, // cf sets
+            },
+        });
+        
         event.waitUntil(cache.put(cacheKey, response.clone()))
-        console.log("No Cache")
     }
 
-    console.log(`responding`)
     return response;
 }
 
@@ -59,7 +44,6 @@ addEventListener("fetch", event => {
 
     let origin = event.request.headers.get(`Host`);
     const url = event.request.url.replace(`https://${origin}/`, ``);
-    const cache = caches.open("Private__Cache")
 
     try {
         if (!url) {
@@ -88,7 +72,7 @@ addEventListener("fetch", event => {
             `, {headers: {'Content-Type': 'text/html'}}))
         }
         else {
-            event.respondWith(handleRequest(event, url, cache))
+            event.respondWith(handleRequest(event, url))
         }
     } catch (e) {
         event.respondWith(new Response("500: Server threw an error: " + e.message))
