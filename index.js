@@ -24,13 +24,13 @@ async function handleRequest(event, url) {
                 "content-type": type,
                 "access-control-allow-origin": "*",
 
-                "age": "300",
-                "cache-control": "public, max-age=300",
-                "date": todayDate,
-                "etag": `"URL: ${url} from ${date}"`,
-                "expires": date,
-                "vary": "Content-Encoding", // cf sets
-                "last-modified": todayDate, // cf sets
+                // "age": "300",
+                // "cache-control": "public, max-age=300",
+                // "date": todayDate,
+                // "etag": `"URL: ${url} from ${date}"`,
+                // "expires": date,
+                // "vary": "Content-Encoding", // cf sets
+                // "last-modified": todayDate, // cf sets
             },
         });
         
