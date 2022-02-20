@@ -2,7 +2,7 @@ async function handleRequest(event, url) {
 
     const cache = caches.default; 
 
-    const cacheKey = `https://static.higenku.org/${url}`;
+    const cacheKey = `https://static.higenku.org/${encodeURIComponent(url)}1`;
     let response = await cache.match(url);
 
     if (!response) {
@@ -12,8 +12,10 @@ async function handleRequest(event, url) {
                 cacheTtl: 86400/2, // half a day
                 cacheEverything: true,
             },
+            keepalive: true,
         })
 
+        console.log(response.status)
         let type = response.headers.get("Content-Type");
         let date = new Date(Date.now())
         date.setUTCDate(date.getUTCDate() + 1);
@@ -23,14 +25,7 @@ async function handleRequest(event, url) {
             headers: {
                 "content-type": type,
                 "access-control-allow-origin": "*",
-
-                // "age": "300",
-                // "cache-control": "public, max-age=300",
-                // "date": todayDate,
-                // "etag": `"URL: ${url} from ${date}"`,
-                // "expires": date,
-                // "vary": "Content-Encoding", // cf sets
-                // "last-modified": todayDate, // cf sets
+                "cache-control": "public, max-age=300"
             },
         });
         
